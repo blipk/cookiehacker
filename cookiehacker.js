@@ -343,7 +343,7 @@ function clickgoldens(opts = {}, keyaction = false) {
         if (shimmer) shimmer.pop()
         else golden.dispatchEvent(new Event('click', { bubbles: true, cancelable: false }))
     }
-    if (deleteGoldens) {console.log("AA")}
+    //if (deleteGoldens) {console.log("AA")}
     for (const i in goldens) {
 		const golden = goldens[i]
         const shimmer = Game.shimmers.find(s => s.l == golden)
