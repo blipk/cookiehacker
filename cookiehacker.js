@@ -4,10 +4,17 @@ const abracadabra = () => {
     actionManager.removeAll()
     //hide shimmers
     let hiddenshimmers = () => Array.from(style.sheet.cssRules).findIndex(r => r.cssText.includes('.shimmer'))
-    actionManager.add({ name: 'hideshimmers', keyfn: function (noop = false)  {
+    actionManager.add({ name: 'hideshimmers', 
+    fn: () => {
+        const goldens = document.querySelectorAll('.shimmer')   
+        const wrathCount = Array.from(goldens).filter(g => g.getAttribute('alt')?.split(' ')[0].toLowerCase() === 'wrath')?.length || 0
+        const goldenCount = goldens.length - wrathCount
+        document.querySelector(`#hideshimmers_info`).innerHTML = `Gold: ${goldenCount} &nbsp; Wrath: ${wrathCount}`
+    }, interval: 10, autostart: true,
+    keyfn: function (noop = false)  {
         if (noop) return hiddenshimmers() !== -1
         hiddenshimmers() === -1 ? style.sheet.insertRule(`.shimmer {visibility: hidden}`, Array.from(style.sheet.cssRules).length) : style.sheet.deleteRule(hiddenshimmers())
-    },  key: 'w' })
+    },  key: 'w', stateFunc: () => { return hiddenshimmers() !== -1 }})
 
     document.onkeyup = function(e) {
         e = e || window.event;
@@ -101,7 +108,7 @@ const buildUI = () => {
         style.sheet.insertRule(styleText, Array.from(style.sheet.cssRules).length)
     }
     updateStyle(`.action-button {background-color: green; border: none;}`)
-    updateStyle(`.action-info {color: green}`)
+    updateStyle(`.action-info {color: black; font-weight: bold; font-size: 110%;}`)
     updateStyle(`.hackaction {display: flex}`)
     updateStyle(`.hackaction > * {margin-left: 5px}`)
 
@@ -202,7 +209,7 @@ const actionManager = {
 	init: (() => {try{return actionManager?.clearAll() || true}catch(e){return true}})(),
     actions: {},
     add: function(opts) {
-        const { name, fn, interval, key, autostart = false, keyfn = () => { this.toggle(this.actions[name]) } } = opts
+        const { name, fn, interval, key, type = 'timer', autostart = false, keyfn = () => { this.toggle(this.actions[name]) } } = opts
         info("adding action:", opts.name, opts)
         this.actions = {
             ...this.actions,
@@ -229,8 +236,13 @@ const actionManager = {
     state: function(name) {
         const action = this.actions[name] || this.actions[name.name]
         if (!action) return console.log(`No action with ${name} found`)
+        if (action.stateFunc) return action.stateFunc()
+
         const okfns = action.oKeyfn.toString()
         const kfns = action.keyfn.toString()
+        if (action.name == 'hideshimmers') {
+            console.log("A", okfns)
+        }
         if (typeof action.fn === 'undefined')
             return action.stateFunction(true)
         if (!okfns.includes('this.toggle')) //no toggling on key press
@@ -323,7 +335,7 @@ function clickgoldens(opts = {}, keyaction = false) {
     const wrathKeys = Object.keys(Game.buffs).filter(b => b.multCpS <= 1)
     const wrathBuffs = Object.values(Game.buffs).filter(b => b.multCpS <= 1)
 
-    if (!deleteGoldens && clickTypes.includes('wrath')) {
+    if (!deleteGoldens && clickTypes.includes('wrath') && !keyaction) {
         if (allBuffs?.find(b => b.dname === 'Cursed finger')) return info("Waiting: Cursed finger active")
         //if (type === 'wrath' && wrathBuffs?.find(b => b.dname === 'Clot')?.time > 2000)//&& wrathBuffs?.some(b => b.time > 2000))
         //    return info(`Wrath buff is currently active for too long ${wrathBuffs[0]?.time}, not autoclicking`)
