@@ -1,5 +1,6 @@
 //init
 const abracadabra = () => {
+
     actionManager.removeAll()
     //hide shimmers
     let hiddenshimmers = () => Array.from(style.sheet.cssRules).findIndex(r => r.cssText.includes('.shimmer'))
@@ -30,47 +31,59 @@ const abracadabra = () => {
     actionManager.add({ name: 'clickwraths', keyfn: (noop = false) => { if (noop) return 'press'; clickgoldens({clickTypes: ['wrath']}, true) }, key: 'z' })
     actionManager.add({ name: 'autoclickwraths', autostart: true, fn: () => { clickgoldens({clickTypes: ['wrath']}) },  interval: 1411, key: 'd' })
 
-    actionManager.add({ name: 'popwrinklersatmaxuntilgold', autostart: true, fn: () => {
-        const goldenWrinklers = Game.wrinklers.filter(w => w.type === 1)
-        const activeWrinklers = Game.wrinklers.filter(w => w.close !== 0)
-        const normalWrinklers = Game.wrinklers.filter(w => w.close !== 0 && w.type !== 1).sort((a, b) => a.sucked - b.sucked)
+    actionManager.add({ name: 'popwrinklersatmaxuntilgold', autostart: true, fn: () => { checkwrinklers() },  interval: 1411, key: 'e' })
 
-        if (goldenWrinklers?.length > 0) return //info("Already have a golden wrinkler")
-        if (!activeWrinklers?.length) return //info("No active wrinklers")
-        if (activeWrinklers.length >= 10 && goldenWrinklers?.length === 0) {
-            info("10 wrinklers reached and no golden one yet - killing one")
-            normalWrinklers[0].hp = 0
-            //normalWrinklers.forEach(w => w.hp = 0)
-        }
-     },  interval: 1411, key: 'e' })
-
+    initUI()
     buildUI()
-    //ui.querySelector('#hackerinfo').innerHTML = ''
 }
 if (Game) Game.abracadabra = abracadabra
 
-//custom stylesheet
-const style = document.querySelector('#hackstyle') || Object.assign(document.createElement('style'), {id: 'hackstyle'})
-document.head.querySelector('#hackstyle') ? null : document.head.appendChild(style);
-
-//ui / keybind helper
-let ui = document.querySelector('#cookiehacker') || Object.assign(document.createElement('div'), {id: 'cookiehacker', innerHTML: ""})
-let actions = ui.querySelector('#hackeractions') || Object.assign(document.createElement('div'), {id: 'hackeractions', innerHTML: ""})
+let ui, actions, style, resize_ob
 const bottomOffset = 400
-Object.assign(ui.style, {
-    zIndex: '999999',
-    fontsize: "2rem",
-    position: "absolute",
-    left:"1vw",
-    top: (document.body.offsetHeight-bottomOffset)+"px",
-})
-Object.assign(actions.style, {
-    padding: '5px',
-    border: '2.5px solid',
-})
-ui = document.body.querySelector('#cookiehacker') || document.body.appendChild(ui);
-actions = ui.querySelector('#hackeractions') || ui.appendChild(actions);
+const initUI = () => {
+    //custom stylesheet
+    style = document.querySelector('#hackstyle') || Object.assign(document.createElement('style'), {id: 'hackstyle'})
+    document.head.querySelector('#hackstyle') ? null : document.head.appendChild(style);
+
+    //ui / keybind helper
+    ui = document.querySelector('#cookiehacker') || Object.assign(document.createElement('div'), {id: 'cookiehacker', innerHTML: ""})
+    actions = ui.querySelector('#hackeractions') || Object.assign(document.createElement('div'), {id: 'hackeractions', innerHTML: ""})
+
+    ui = document.body.querySelector('#cookiehacker') || document.body.appendChild(ui);
+    actions = ui.querySelector('#hackeractions') || ui.appendChild(actions);
+
+    resize_ob = new ResizeObserver((entries) => { styleUI() });
+    resize_ob.observe(document.querySelector("#sectionLeft"));
+}
+
+const styleUI = () => {
+    const leftWidth = `calc(${(document.querySelector('#sectionLeft').offsetWidth-document.querySelector('.buff').offsetWidth)}px - 2vw)`
+    Object.assign(ui.style, {
+        zIndex: '999999',
+        fontsize: "2rem",
+        position: "absolute",
+        left:"1vw",
+        top: (document.body.offsetHeight-bottomOffset)+"px",
+    })
+
+    Object.assign(actions.style, {
+        padding: '5px',
+        border: '2.5px solid',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+    })
+
+    document.querySelectorAll(`#${ui.id} > *`).forEach(l => {
+        Object.assign(l.style, {
+            width: leftWidth,
+        })
+    })
+}
 const buildUI = () => {
+    if (!ui) initUI()
+    styleUI()
+
     const hackerInfo = ui.querySelector('#hackerinfo') || ui.appendChild(Object.assign(document.createElement('div'), {id: 'hackerinfo', innerHTML: ``}))
     Object.assign(hackerInfo.style, {
         width: document.querySelector('#sectionLeft').offsetWidth*0.88+'px',
@@ -92,9 +105,7 @@ const buildUI = () => {
     updateStyle(`.hackaction {display: flex}`)
     updateStyle(`.hackaction > * {margin-left: 5px}`)
 
-
-
-    for (const [name, action] of Object.entries(actionManager.actions).sort((a, b) => a[1].state() === 'press' ? 1 : b[1].state() === 'press' ? 0 : -1)) {
+    for (const [name, action] of Object.entries(actionManager.actions).sort((a, b) => a[1].state() === 'press' ? 1 : b[1].state() === 'press' ? -1 : 0)) {
         const state = action.state()
         const html = action.toggleHTML()
         //console.log(action.name, action.state())
@@ -110,9 +121,11 @@ const buildUI = () => {
 
 }
 let lastmsg = ''
+let repeatCount = 0
+const nosrcInfo = function() {info(...arguments)}
 const info = function() {
     if (!document.querySelector('#hackerinfo')) buildUI()
-    const text = Array.from(arguments).join(' ')
+    const text = Array.from(arguments).join(' ').trim()
 
     const callerArgs = Array.from(arguments.callee.caller.arguments)
     const callerName = arguments.callee.caller.name
@@ -121,9 +134,9 @@ const info = function() {
         const fns = a.fn?.toString().replaceAll(' ','').replaceAll("'",'').replaceAll('"','')
         const kfns = a.oKeyfn?.toString().replaceAll(' ','').replaceAll("'",'').replaceAll('"','')
         const args = JSON.stringify(callerArgs).slice(0, -1).slice(1).replaceAll(' ','').replaceAll("'",'').replaceAll('"','')
-        
+
         const searchString = `${callerName}(${args})`
-        
+
         /*
         console.log(a.name, fns, kfns)
         console.log("CCC", fns?.includes(callerName) )
@@ -131,7 +144,7 @@ const info = function() {
 
         console.log("CCC2", kfns?.includes(callerName) )
         console.log("CCC2", kfns?.includes(args), kfns, args )
-        
+
         console.log("CCC", searchString)
         console.log("CCC2", fns?.includes(searchString), fns, args )
         console.log("CCC3", kfns?.includes(searchString), kfns, args )
@@ -140,41 +153,47 @@ const info = function() {
 
         console.log('------------')
         */
-        
-        
+
+
         //if (callerArgs[0]?.key === a.key) //keyboard event
         //    return true
-        
+
         return fns?.includes(searchString) || kfns?.includes(searchString)
             || text.includes(` action ${a.name}`) //from actionManager function
 
-        
+
     })
-    
+
     //console.log("XX", text, arguments.callee.caller)
     //console.log( callerArgs)
-    
-    
+
+
     const info = document.querySelector('#hackerinfo')
     const srcActionInfo = document.querySelector(`#${srcAction?.name}_info`)
     //const target = srcAction ?
     const lineCount = info.innerHTML.split('<br').length-1
 
-    const repeat = (text === lastmsg && info.innerHTML.includes(text)) || (text === srcAction?.lastMsg && srcActionInfo?.innerHTML.includes(text))
+    const repeat = (text === lastmsg && info.innerHTML.includes(text) && repeatCount < 25) || (text === srcAction?.lastMsg && srcActionInfo?.innerHTML.includes(text) && srcAction.lastMsgRepeat < 25)
     //if (lineCount > 10 && !repeat) info.innerHTML = ''
-    console.log("YY", text, srcAction)
+    //console.log("YY", text, repeat, srcAction)
     //console.log(srcActionInfo)
-    
-    
+
+
     if (srcAction && srcActionInfo) {
-        console.log(text, repeat, srcAction.lastMsg)
-        srcActionInfo.innerHTML = `${repeat ? srcActionInfo.innerHTML.replace(lastmsg, lastmsg+'.') : text}`
+//        console.log(text, repeat, srcAction.lastMsg)
+        srcActionInfo.innerHTML = `${repeat ? text+'.'.repeat(srcAction.lastMsgRepeat) : text}`
     } else
         info.innerHTML = `${repeat ? info.innerHTML.replace(lastmsg, lastmsg+'.') : text+'<br/>' + info.innerHTML}`
-        
-    
-    //if (srcActionInfo) setTimeout(() => srcActionInfo.innerHTML = '', 7777)
-    if (srcAction) srcAction.lastMsg = text
+
+
+    //if (srcActionInfo && !srcActionInfo.innerHTML.x) srcActionInfo.innerHTML.x = setTimeout(() => {srcActionInfo.innerHTML = ''; srcActionInfo.innerHTML.x = null}, 9999)
+    if (srcAction) {
+        srcAction.lastMsg = text
+        if (repeat) srcAction.lastMsgRepeat += 1
+        else srcAction.lastMsgRepeat = 0
+    }
+    if (repeat) repeatCount += 1
+    else repeatCount = 0
     lastmsg = text
 }
 
@@ -195,7 +214,9 @@ const actionManager = {
                             changeInterval: (interval) => this.changeInterval(name, interval),
                             oKeyfn: keyfn,
                             keyfn: () => {keyfn(); buildUI();},
-                            stateFunction: () => {return keyfn(true);}, }
+                            stateFunction: () => {return keyfn(true);},
+                            lastMsg: '', lastMsgRepeat: 0,
+                         }
                 }
             }
         }
@@ -208,8 +229,12 @@ const actionManager = {
     state: function(name) {
         const action = this.actions[name] || this.actions[name.name]
         if (!action) return console.log(`No action with ${name} found`)
+        const okfns = action.oKeyfn.toString()
+        const kfns = action.keyfn.toString()
         if (typeof action.fn === 'undefined')
             return action.stateFunction(true)
+        if (!okfns.includes('this.toggle')) //no toggling on key press
+            return 'press'
         return action.id
     },
     start: function(name, restart = false) {
@@ -250,12 +275,12 @@ const actionManager = {
         const state = action.state()
         const stateText = state !== 'press' ? state ? 'on' : 'off' : 'press'
         const keyInput = `<input type="text" value="${action.key}" maxlength="1" size="1" onfocus="javascript:event.target.select()" onchange="javascript:actionManager.actions['${action.name}'].key=event.target.value"/>`
-        const intervalInput = `${action.interval ? `every <input type="number" onchange="javascript:actionManager.actions['${action.name}'].changeInterval(event.target.value)" style="width: ${(action.interval.toString().length * 8.8)+15}px" value='${action.interval}'>ms` : ''}`
+        const intervalInput = `${action.interval ? ` &nbsp;every <input type="number" onchange="javascript:actionManager.actions['${action.name}'].changeInterval(event.target.value)" style="width: ${(action.interval.toString().length * 8.8)+15}px" value='${action.interval}'>ms` : ''}`
         const label = `<label for=""${action.name}_toggle">${action.name}</label> ${intervalInput}`
         const actionInput = state === 'press' ?
             `<button type="button" id="${action.name}_toggle" class='action-button' name="${action.name}_toggle" onclick="javascript:actionManager.actions['${action.name}'].keyfn()">X</button>`
         : `<input type="checkbox" id="${action.name}_toggle" name="${action.name}_toggle" value="" onclick="javascript:a=actionManager.actions['${action.name}']; typeof a.fn === 'function' ? a.toggle() : a.keyfn()" ${state ? 'checked' : ''}>`
-        const actionInfo = `<div id="${action.name}_info" class="action-info">${action.lastMsg || ''}</div>`
+        const actionInfo = `<div id="${action.name}_info" class="action-info">${action.lastMsg || ''}${'.'.repeat(action.lastMsgRepeat)}</div>`
         return `${keyInput} ${actionInput} ${label} ${actionInfo}`
     },
 	clearAll: function() {
@@ -270,7 +295,21 @@ const actionManager = {
 function clickcookie() {
     document.querySelector('#bigCookie').dispatchEvent(new Event('click', { bubbles: true, cancelable: false }))
 }
+function checkwrinklers() {
+    const goldenWrinklers = Game.wrinklers.filter(w => w.type === 1)
+    const activeWrinklers = Game.wrinklers.filter(w => w.close !== 0)
+    const normalWrinklers = Game.wrinklers.filter(w => w.close !== 0 && w.type !== 1).sort((a, b) => a.sucked - b.sucked)
+    const maxWrinklers = Game.getWrinklersMax()
 
+    if (goldenWrinklers?.length > 0 && Game.Achievements["Moistburster"].won) return info("Already have a golden wrinkler and achievements")
+    if (!activeWrinklers?.length) return info("Waiting for wrinklers")
+    if (activeWrinklers.length >= maxWrinklers && (goldenWrinklers?.length === 0 || !Game.Achievements["Moistburster"].won)) {
+        info("Max wrinklers reached and either no golden one or no achievement yet - killing some")
+        //normalWrinklers[0].hp = 0
+        normalWrinklers.forEach((w, i) => setTimeout(() => {w.hp = 0}, i*1414))
+    }
+    return info(`Waiting for max wrinklers (${maxWrinklers})`)
+}
 function clickgoldens(opts = {}, keyaction = false) {
 	const { nothing, clickDelay = 0, maxClick = 4000, deleteGoldens = false, deleteMin = 50, alsoClick = false, clickTypes = ['golden'] } = opts
     const goldens = document.querySelectorAll('.shimmer')
@@ -289,11 +328,12 @@ function clickgoldens(opts = {}, keyaction = false) {
         //if (type === 'wrath' && wrathBuffs?.find(b => b.dname === 'Clot')?.time > 2000)//&& wrathBuffs?.some(b => b.time > 2000))
         //    return info(`Wrath buff is currently active for too long ${wrathBuffs[0]?.time}, not autoclicking`)
         if (allBuffs?.find(b => b.dname === 'Elder frenzy')) return info("Waiting: Elder frenzy active")
-        if (wrathBuffs.length > 2) return info("Waiting: Too many negative buffs", wrathKeys)
+        if (wrathBuffs.length >= 3) return info("Waiting: Too many negative buffs", wrathKeys)
     }
 
     //if (keyaction) {
-        const targetCount = clickTypes.includes('golden') && clickTypes.includes('wrath')
+        const targetCount = deleteGoldens ? goldens.length :
+                clickTypes.includes('golden') && clickTypes.includes('wrath')
                         ? goldens.length
                         : clickTypes.includes('golden') ? goldenCount : wrathCount;
         info(`${deleteGoldens ? alsoClick ? 'Deleting and clicking' : 'Deleting':'Clicking'} ${deleteGoldens ? goldens.length : maxClick === -1 || maxClick > goldens.length ? targetCount === wrathCount ? wrathCount : goldenCount : maxClick} of ${targetCount} ${clickTypes} cookies`)
@@ -330,7 +370,10 @@ function clickgoldens(opts = {}, keyaction = false) {
 // Value info helper
 let buildings = Object.assign([], Game.ObjectsById)
 let buildingsByValue = [];
+const upgrades = Object.assign([], Game.UpgradesInStore)
+let upgradesByValue = [];
 function showValues(log = false) {
+    // Buildings
     document.querySelectorAll('.value').forEach(el => el.remove())
 
 	buildings.map((b) => {
@@ -357,9 +400,9 @@ function showValues(log = false) {
 	for (const i in buildingsByValue) {
         const index = buildingsByValue.length-i-1
 		const building = buildingsByValue[index]
-		if (log) info(`${parseInt(index,10)+1}.`, building.name, `(${building.value})`)
+		if (log) nosrcInfo(`${parseInt(index,10)+1}.`, building.name, `(${building.value})`)
 	}
-    if (log) info("Building sorted values (cps per buy):")
+    if (log) nosrcInfo("Building sorted values (cps per buy):")
 
     for (const i in buildings) {
 		const building = buildings[i]
@@ -381,12 +424,66 @@ function showValues(log = false) {
 		}
     }
 
+    // store upgrades
+    for (const upgrade of upgrades) {
+        const price = upgrade.getPrice()
+
+        let group
+        Object.entries(Game.UpgradesByPool).forEach(([groupName, upgradeGroup]) => {
+            if (!groupName) return //"" group contains all
+            if (!upgradeGroup.includes(upgrade)) return
+            group = groupName
+        })
+
+        const building =  buildings.find(b => b.name == upgrade.buildingTie.name)
+        const percent = (parseInt(upgrade.desc.match(/[+|-][0-9]%/g) || '+100%', 10) / 100) //non-fortune building upgrades are 'twice', which is a 100% increase
+
+        let cpsIncrease = 0
+        if (building)
+            cpsIncrease = building.bought * building.last_computed_cps * percent
+        else {
+            if (group === 'cookie') {
+                cpsIncrease = Game.unbuffedCps * percent
+            } else if (group === 'debug')  {
+
+            } else if (group === 'kitten')  {   //milk
+            } else if (group === 'prestige')  {
+            } else if (group === 'tech')  { //pocalypse
+            } else if (group === 'toggle')  { //pocalypse/seasonal/misc
+            } else {
+
+            }
+        }
+
+        const storeEl = document.querySelector(`.upgrade[onclick*="Game.UpgradesById[${upgrade.id}]"]`)
+        upgrade.cpsIncrease = cpsIncrease
+        upgrade.groupName = group
+        upgrade.value = price / cpsIncrease
+        upgrade.El = storeEl
+        
+        console.log(upgrade.name, group, percent, numberFormatters[1](cpsIncrease))
+    }
+    upgradesByValue = [...upgrades].sort((a, b) => { return a.value - b.value })
+    upgradesByValue.forEach((upgrade, i) => {
+        const storeEl = upgrade.El
+        const storeInfo = storeEl.querySelector(`#${upgrade.name.replaceAll(' ','')}_storeinfo`)
+                        || storeEl.appendChild(Object.assign(document.createElement('div'),{id: `${upgrade.name.replaceAll(' ','')}_storeinfo`}))
+        storeInfo.innerHTML =  `(${i+1})`
+        Object.assign(storeInfo.style, {
+            position: 'absolute',
+            width: storeEl.offsetWidth+'px',
+            maxWidth: storeEl.offsetWidth+'px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+        })
+    })
+
 }
 
 abracadabra()
 
 /*
-const upgrades = Game.UpgradesInStore
 
 // Click the ticker achievement
 function clickTicker(count) {
