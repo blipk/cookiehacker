@@ -25,13 +25,13 @@ const abracadabra = () => {
     actionManager.add({ name: 'updateValues', autostart: true, fn: () => { showValues() }, interval: 20000, key: 'q', keyfn: () => { showValues(true) } })
     actionManager.add({ name: 'bigcookie', autostart: true, fn: () => { clickcookie() }, interval: 10, key: 'a' })
     Game.shimmersL.removeChild = (el) => { try { Game.shimmersL.removeChild(el) } catch (e) {} } // Patch errors from clicking too many golden cookies
-    actionManager.add({ name: 'autodeleteshimmers', autostart: true, fn: () => { clickgoldens({deleteGoldens: true, alsoClick: false}) }, interval: 1, key: 's' })
+    actionManager.add({ name: 'autodeleteshimmers', autostart: true, fn: () => { clickgoldens({deleteGoldens: true, alsoClick: false}) }, interval: 10, key: 's' })
     actionManager.add({ name: 'clickgoldens', keyfn: (noop = false) => { if (noop) return 'press'; clickgoldens({}, true) },  key: 'x' })
     actionManager.add({ name: 'autoclickgoldens', autostart: true, fn: () => { clickgoldens() },  interval: 3244, key: 'f' })
     actionManager.add({ name: 'clickwraths', keyfn: (noop = false) => { if (noop) return 'press'; clickgoldens({clickTypes: ['wrath']}, true) }, key: 'z' })
     actionManager.add({ name: 'autoclickwraths', autostart: true, fn: () => { clickgoldens({clickTypes: ['wrath']}) },  interval: 1411, key: 'd' })
 
-    actionManager.add({ name: 'popwrinklersatmaxuntilgold', autostart: true, fn: () => { checkwrinklers() },  interval: 1411, key: 'e' })
+    actionManager.add({ name: 'popwrinklersatmaxuntilgold', autostart: false, fn: () => { checkwrinklers() },  interval: 1411, key: 'e' })
 
     initUI()
     buildUI()
@@ -275,7 +275,7 @@ const actionManager = {
         const state = action.state()
         const stateText = state !== 'press' ? state ? 'on' : 'off' : 'press'
         const keyInput = `<input type="text" value="${action.key}" maxlength="1" size="1" onfocus="javascript:event.target.select()" onchange="javascript:actionManager.actions['${action.name}'].key=event.target.value"/>`
-        const intervalInput = `${action.interval ? ` &nbsp;every <input type="number" onchange="javascript:actionManager.actions['${action.name}'].changeInterval(event.target.value)" style="width: ${(action.interval.toString().length * 8.8)+15}px" value='${action.interval}'>ms` : ''}`
+        const intervalInput = `${action.interval ? ` &nbsp;every <input type="number" min="1" onchange="javascript:actionManager.actions['${action.name}'].changeInterval(event.target.value)" style="width: ${(action.interval.toString().length * 8.8)+15}px" value='${action.interval}'>ms` : ''}`
         const label = `<label for=""${action.name}_toggle">${action.name}</label> ${intervalInput}`
         const actionInput = state === 'press' ?
             `<button type="button" id="${action.name}_toggle" class='action-button' name="${action.name}_toggle" onclick="javascript:actionManager.actions['${action.name}'].keyfn()">X</button>`
@@ -343,6 +343,7 @@ function clickgoldens(opts = {}, keyaction = false) {
         if (shimmer) shimmer.pop()
         else golden.dispatchEvent(new Event('click', { bubbles: true, cancelable: false }))
     }
+    if (deleteGoldens) {console.log("AA")}
     for (const i in goldens) {
 		const golden = goldens[i]
         const shimmer = Game.shimmers.find(s => s.l == golden)
@@ -358,6 +359,7 @@ function clickgoldens(opts = {}, keyaction = false) {
         if (deleteGoldens && Game.shimmers[0]?.forceObj?.type?.includes('cookie storm')) continue//don't click through storms
 
 		if (maxClick > 0 && i >= maxClick) break
+
         const type = shimmer?.type || golden.getAttribute ? golden.getAttribute('alt').split(' ')[0].toLowerCase() : null
         if (clickTypes.includes(type)) {
 			clickDelay === 0
@@ -461,7 +463,7 @@ function showValues(log = false) {
         upgrade.value = price / cpsIncrease
         upgrade.El = storeEl
         
-        console.log(upgrade.name, group, percent, numberFormatters[1](cpsIncrease))
+        //console.log(upgrade.name, group, percent, numberFormatters[1](cpsIncrease))
     }
     upgradesByValue = [...upgrades].sort((a, b) => { return a.value - b.value })
     upgradesByValue.forEach((upgrade, i) => {
