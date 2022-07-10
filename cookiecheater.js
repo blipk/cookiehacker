@@ -24,7 +24,7 @@ const abracadabra = () => {
     actionManager.add({ name: 'updateValues', autostart: true, fn: () => { showValues() }, interval: 20000, key: 'q', keyfn: () => { showValues(true) } })
     actionManager.add({ name: 'bigcookie', autostart: true, fn: () => { clickcookie() }, interval: 10, key: 'a' })
     Game.shimmersL.removeChild = (el) => { try { Game.shimmersL.removeChild(el) } catch (e) {} } // Patch errors from clicking too many golden cookies
-    actionManager.add({ name: 'autodeleteshimmers', autostart: true, fn: () => { clickgoldens({deleteGoldens: true, alsoClick: true}) }, interval: 1, key: 's' })
+    actionManager.add({ name: 'autodeleteshimmers', autostart: true, fn: () => { clickgoldens({deleteGoldens: true, alsoClick: false}) }, interval: 1, key: 's' })
     actionManager.add({ name: 'clickgoldens', keyfn: (noop = false) => { if (noop) return 'press'; clickgoldens({}, true) },  key: 'x' })
     actionManager.add({ name: 'autoclickgoldens', autostart: true, fn: () => { clickgoldens() },  interval: 3244, key: 'f' })
     actionManager.add({ name: 'clickwraths', keyfn: (noop = false) => { if (noop) return 'press'; clickgoldens({clickTypes: ['wrath']}, true) }, key: 'z' })
@@ -45,7 +45,7 @@ const abracadabra = () => {
      },  interval: 1411, key: 'e' })
 
     buildUI()
-    ui.querySelector('#hackerinfo').innerHTML = ''
+    //ui.querySelector('#hackerinfo').innerHTML = ''
 }
 if (Game) Game.abracadabra = abracadabra
 
@@ -66,7 +66,7 @@ Object.assign(ui.style, {
 })
 Object.assign(actions.style, {
     padding: '5px',
-    border: '2.5px solid'
+    border: '2.5px solid',
 })
 ui = document.body.querySelector('#cookiehacker') || document.body.appendChild(ui);
 actions = ui.querySelector('#hackeractions') || ui.appendChild(actions);
@@ -80,9 +80,19 @@ const buildUI = () => {
         overflowY: 'auto',
     })
 
-    if (Array.from(style.sheet.cssRules).find(r => r.cssText.includes('action-button')))
-        style.sheet.deleteRule(Array.from(style.sheet.cssRules).findIndex(r => r.cssText.includes('action-button')))
-    style.sheet.insertRule(`.action-button {background-color: green; border: none;}`, 0)
+    const updateStyle = (styleText, index = 0) => {
+        if (Array.from(style.sheet.cssRules).find(r => r.cssText.includes(styleText)))
+            style.sheet.deleteRule(Array.from(style.sheet.cssRules).findIndex(r => r.cssText.includes(styleText)))
+        else if (Array.from(style.sheet.cssRules).find(r => styleText.includes(r.selectorText)))
+            style.sheet.deleteRule(Array.from(style.sheet.cssRules).findIndex(r => styleText.includes(r.selectorText)))
+        style.sheet.insertRule(styleText, Array.from(style.sheet.cssRules).length)
+    }
+    updateStyle(`.action-button {background-color: green; border: none;}`)
+    updateStyle(`.action-info {color: green}`)
+    updateStyle(`.hackaction {display: flex}`)
+    updateStyle(`.hackaction > * {margin-left: 5px}`)
+
+
 
     for (const [name, action] of Object.entries(actionManager.actions).sort((a, b) => a[1].state() === 'press' ? 1 : b[1].state() === 'press' ? 0 : -1)) {
         const state = action.state()
@@ -102,18 +112,69 @@ const buildUI = () => {
 let lastmsg = ''
 const info = function() {
     if (!document.querySelector('#hackerinfo')) buildUI()
-
-    //const srcAction = Object.values(actionManager.actions).find(a => a.keyfn?.toString().includes(arguments.callee.caller.name))
-    //console.log("XX", arguments.callee.caller, Array.from(arguments.callee.caller.arguments))
-    //console.log("YY", srcAction?.fn)
     const text = Array.from(arguments).join(' ')
+
+    const callerArgs = Array.from(arguments.callee.caller.arguments)
+    const callerName = arguments.callee.caller.name
+    //console.log("AA", callerName, callerArgs)
+    const srcAction = Object.values(actionManager.actions).find(a => {
+        const fns = a.fn?.toString().replaceAll(' ','').replaceAll("'",'').replaceAll('"','')
+        const kfns = a.oKeyfn?.toString().replaceAll(' ','').replaceAll("'",'').replaceAll('"','')
+        const args = JSON.stringify(callerArgs).slice(0, -1).slice(1).replaceAll(' ','').replaceAll("'",'').replaceAll('"','')
+        
+        const searchString = `${callerName}(${args})`
+        
+        /*
+        console.log(a.name, fns, kfns)
+        console.log("CCC", fns?.includes(callerName) )
+        console.log("CCC", fns?.includes(args), fns, args )
+
+        console.log("CCC2", kfns?.includes(callerName) )
+        console.log("CCC2", kfns?.includes(args), kfns, args )
+        
+        console.log("CCC", searchString)
+        console.log("CCC2", fns?.includes(searchString), fns, args )
+        console.log("CCC3", kfns?.includes(searchString), kfns, args )
+
+        //console.log("CCC", callerArgs[0]?.key === a.key, callerArgs[0]?.key, a.key)
+
+        console.log('------------')
+        */
+        
+        
+        //if (callerArgs[0]?.key === a.key) //keyboard event
+        //    return true
+        
+        return fns?.includes(searchString) || kfns?.includes(searchString)
+            || text.includes(` action ${a.name}`) //from actionManager function
+
+        
+    })
+    
+    //console.log("XX", text, arguments.callee.caller)
+    //console.log( callerArgs)
+    
+    
     const info = document.querySelector('#hackerinfo')
+    const srcActionInfo = document.querySelector(`#${srcAction?.name}_info`)
     //const target = srcAction ?
     const lineCount = info.innerHTML.split('<br').length-1
 
-    const repeat = text === lastmsg && info.innerHTML.includes(text)
+    const repeat = (text === lastmsg && info.innerHTML.includes(text)) || (text === srcAction?.lastMsg && srcActionInfo?.innerHTML.includes(text))
     //if (lineCount > 10 && !repeat) info.innerHTML = ''
-    info.innerHTML = `${repeat ? info.innerHTML.replace(lastmsg, lastmsg+'.') : text+'<br/>' + info.innerHTML}`
+    console.log("YY", text, srcAction)
+    //console.log(srcActionInfo)
+    
+    
+    if (srcAction && srcActionInfo) {
+        console.log(text, repeat, srcAction.lastMsg)
+        srcActionInfo.innerHTML = `${repeat ? srcActionInfo.innerHTML.replace(lastmsg, lastmsg+'.') : text}`
+    } else
+        info.innerHTML = `${repeat ? info.innerHTML.replace(lastmsg, lastmsg+'.') : text+'<br/>' + info.innerHTML}`
+        
+    
+    //if (srcActionInfo) setTimeout(() => srcActionInfo.innerHTML = '', 7777)
+    if (srcAction) srcAction.lastMsg = text
     lastmsg = text
 }
 
@@ -132,6 +193,7 @@ const actionManager = {
                     ...opts,
                     ... { start: () => this.start(name), stop: () => this.stop(name), toggle: () => this.toggle(name), toggleHTML: () => this.toggleHTML(name), state: () => this.state(name), autostart: autostart,
                             changeInterval: (interval) => this.changeInterval(name, interval),
+                            oKeyfn: keyfn,
                             keyfn: () => {keyfn(); buildUI();},
                             stateFunction: () => {return keyfn(true);}, }
                 }
@@ -187,14 +249,14 @@ const actionManager = {
         if (!action) return
         const state = action.state()
         const stateText = state !== 'press' ? state ? 'on' : 'off' : 'press'
-        const keyInput = `<input type="text" value="${action.key}" maxlength="1" size="1" onchange="javascript:actionManager.actions['${action.name}'].key=event.target.value"/>`
+        const keyInput = `<input type="text" value="${action.key}" maxlength="1" size="1" onfocus="javascript:event.target.select()" onchange="javascript:actionManager.actions['${action.name}'].key=event.target.value"/>`
         const intervalInput = `${action.interval ? `every <input type="number" onchange="javascript:actionManager.actions['${action.name}'].changeInterval(event.target.value)" style="width: ${(action.interval.toString().length * 8.8)+15}px" value='${action.interval}'>ms` : ''}`
         const label = `<label for=""${action.name}_toggle">${action.name}</label> ${intervalInput}`
         const actionInput = state === 'press' ?
             `<button type="button" id="${action.name}_toggle" class='action-button' name="${action.name}_toggle" onclick="javascript:actionManager.actions['${action.name}'].keyfn()">X</button>`
         : `<input type="checkbox" id="${action.name}_toggle" name="${action.name}_toggle" value="" onclick="javascript:a=actionManager.actions['${action.name}']; typeof a.fn === 'function' ? a.toggle() : a.keyfn()" ${state ? 'checked' : ''}>`
-        const actionInfo = `<div id="${action.name}_info"></div>`
-        return `${keyInput} ${actionInput} ${label}`
+        const actionInfo = `<div id="${action.name}_info" class="action-info">${action.lastMsg || ''}</div>`
+        return `${keyInput} ${actionInput} ${label} ${actionInfo}`
     },
 	clearAll: function() {
 		for (const [name, action] of Object.entries(this.actions)) {
@@ -217,12 +279,25 @@ function clickgoldens(opts = {}, keyaction = false) {
 
     const wrathCount = Array.from(goldens).filter(g => g.getAttribute('alt')?.split(' ')[0].toLowerCase() === 'wrath')?.length || 0
     const goldenCount = goldens.length - wrathCount
-	if (keyaction) {
+
+    const allBuffs = Object.values(Game.buffs)
+    const wrathKeys = Object.keys(Game.buffs).filter(b => b.multCpS <= 1)
+    const wrathBuffs = Object.values(Game.buffs).filter(b => b.multCpS <= 1)
+
+    if (!deleteGoldens && clickTypes.includes('wrath')) {
+        if (allBuffs?.find(b => b.dname === 'Cursed finger')) return info("Waiting: Cursed finger active")
+        //if (type === 'wrath' && wrathBuffs?.find(b => b.dname === 'Clot')?.time > 2000)//&& wrathBuffs?.some(b => b.time > 2000))
+        //    return info(`Wrath buff is currently active for too long ${wrathBuffs[0]?.time}, not autoclicking`)
+        if (allBuffs?.find(b => b.dname === 'Elder frenzy')) return info("Waiting: Elder frenzy active")
+        if (wrathBuffs.length > 2) return info("Waiting: Too many negative buffs", wrathKeys)
+    }
+
+    //if (keyaction) {
         const targetCount = clickTypes.includes('golden') && clickTypes.includes('wrath')
                         ? goldens.length
                         : clickTypes.includes('golden') ? goldenCount : wrathCount;
         info(`${deleteGoldens ? alsoClick ? 'Deleting and clicking' : 'Deleting':'Clicking'} ${deleteGoldens ? goldens.length : maxClick === -1 || maxClick > goldens.length ? targetCount === wrathCount ? wrathCount : goldenCount : maxClick} of ${targetCount} ${clickTypes} cookies`)
-    }
+    //}
 
     const pop = (golden, shimmer) => {
         if (shimmer) shimmer.pop()
@@ -237,7 +312,6 @@ function clickgoldens(opts = {}, keyaction = false) {
             if (shimmer) shimmer.die()
             if (golden.remove) golden.remove()
             if (golden.style) golden.style.display = 'none'
-
 			if (!alsoClick) continue
 		}
 
@@ -246,17 +320,6 @@ function clickgoldens(opts = {}, keyaction = false) {
 		if (maxClick > 0 && i >= maxClick) break
         const type = shimmer?.type || golden.getAttribute ? golden.getAttribute('alt').split(' ')[0].toLowerCase() : null
         if (clickTypes.includes(type)) {
-            const allBuffs = Object.values(Game.buffs)
-            const wrathKeys = Object.keys(Game.buffs).filter(b => b.multCpS <= 1)
-            const wrathBuffs = Object.values(Game.buffs).filter(b => b.multCpS <= 1)
-
-            if (allBuffs?.find(b => b.dname === 'Cursed finger')) return info("Waiting: Cursed finger active")
-            //if (type === 'wrath' && wrathBuffs?.find(b => b.dname === 'Clot')?.time > 2000)//&& wrathBuffs?.some(b => b.time > 2000))
-            //    return info(`Wrath buff is currently active for too long ${wrathBuffs[0]?.time}, not autoclicking`)
-            if (allBuffs?.find(b => b.dname === 'Elder frenzy')) return info("Waiting: Elder frenzy active")
-            if (wrathBuffs.length > 2) return info("Waiting: Too many negative buffs", wrathKeys)
-
-
 			clickDelay === 0
 			? pop(golden, shimmer)
             : setTimeout(() => { pop(golden, shimmer) }, clickDelay)
