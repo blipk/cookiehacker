@@ -305,7 +305,7 @@ function showValues(log = false) {
 		let valueInfo = document.querySelector(`${building.name}Value`)
 		if (!valueInfo) {
 			valueInfo = Object.assign(document.createElement('span'), { id: building.name + 'Value', classList: 'value', innerHTML: ` (${numberFormatters[1](building.value)} per buy)(${valueIndex+1})` })
-			document.querySelectorAll('.product.unlocked')[i].querySelector('.content > .price').appendChild(valueInfo)
+			document.querySelectorAll('.product.unlocked')[i]?.querySelector('.content > .price').appendChild(valueInfo)
 		}
 
 		valueInfo.style.color = 'black'
