@@ -14,9 +14,10 @@ For use on https://orteil.dashnet.org/cookieclicker/
 - Click on wrath or golden cookies with key press
 
 ## How to use
-1. Open your browser console (F12 or CTRL+SHIFT+J or CTRL+SHIFT+I)
-2. Copy the [cookierhacker.js](https://raw.githubusercontent.com/blipk/cookiehacker/main/cookiehacker.js) page and paste it into the console
-3. Press enter
+1. Open the cookie clicker game page [https://orteil.dashnet.org/cookieclicker/](https://orteil.dashnet.org/cookieclicker/)
+2. Open your browser console on that page (F12 or CTRL+SHIFT+J or CTRL+SHIFT+I)
+3. Copy the [cookierhacker.js](https://raw.githubusercontent.com/blipk/cookiehacker/main/cookiehacker.js) page and paste it into the console
+4. Press enter
 
 ## Screenshots
 <p float="left">
