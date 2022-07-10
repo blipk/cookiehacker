@@ -65,7 +65,7 @@ const initUI = () => {
 }
 
 const styleUI = () => {
-    const leftWidth = `calc(${(document.querySelector('#sectionLeft').offsetWidth-document.querySelector('.buff').offsetWidth)}px - 2vw)`
+    const leftWidth = `calc(${(document.querySelector('#sectionLeft').offsetWidth-(document.querySelector('.buff')?.offsetWidth || 0))}px - 2vw)`
     Object.assign(ui.style, {
         zIndex: '999999',
         fontsize: "2rem",
@@ -91,7 +91,7 @@ const styleUI = () => {
         marginTop: '5px',
         overflowX: 'hidden',
         overflowY: 'auto',
-        margin: '0px', padding: '0px'
+        //margin: '0px', padding: '0px'
     })
 
     /*
