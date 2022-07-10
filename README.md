@@ -2,6 +2,8 @@
 For use on https://orteil.dashnet.org/cookieclicker/
 
 ## Features
+- Keyboard shortcuts to toggle timers or actions
+- Key and timer interval can be changed
 - Autoclick big cookie
 - Hide shimmers (golden/wrath cookies) - Can be useful during storms
 - Delete shimmers without clicking on them - Also useful during wrath storms
@@ -9,6 +11,7 @@ For use on https://orteil.dashnet.org/cookieclicker/
 - Autoclick any wrath cookies
 - Pop wrinklers when you have max (10/12) until you get the bursting achievements AND a gold wrinkler
 - Show numbered best order to buy upgrades and buildings (Yellow > Orange > Blue)
+- Click on wrath or golden cookies with key press
 
 ## How to use
 1. Open your browser console (F12 or CTRL+SHIFT+J or CTRL+SHIFT+I)
