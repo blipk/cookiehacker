@@ -4,12 +4,13 @@ const abracadabra = () => {
     actionManager.removeAll()
     //hide shimmers
     let hiddenshimmers = () => Array.from(style.sheet.cssRules).findIndex(r => r.cssText.includes('.shimmer'))
-    actionManager.add({ name: 'hideshimmers', 
+    actionManager.add({ name: 'hideshimmers',
     fn: () => {
-        const goldens = document.querySelectorAll('.shimmer')   
+        const goldens = document.querySelectorAll('.shimmer')
         const wrathCount = Array.from(goldens).filter(g => g.getAttribute('alt')?.split(' ')[0].toLowerCase() === 'wrath')?.length || 0
         const goldenCount = goldens.length - wrathCount
-        document.querySelector(`#hideshimmers_info`).innerHTML = `Gold: ${goldenCount} &nbsp; Wrath: ${wrathCount}`
+        const actionInfo = document.querySelector(`#hideshimmers_info`)
+        if (actionInfo) actionInfo.innerHTML = `Gold: ${goldenCount} &nbsp; Wrath: ${wrathCount}`
     }, interval: 10, autostart: true,
     keyfn: function (noop = false)  {
         if (noop) return hiddenshimmers() !== -1
@@ -71,9 +72,11 @@ const styleUI = () => {
         position: "absolute",
         left:"1vw",
         top: (document.body.offsetHeight-bottomOffset)+"px",
+        background: 'rgba(200, 200, 200, .2)'
     })
 
     Object.assign(actions.style, {
+        width: leftWidth,
         padding: '5px',
         border: '2.5px solid',
         whiteSpace: 'nowrap',
@@ -81,24 +84,27 @@ const styleUI = () => {
         textOverflow: 'ellipsis',
     })
 
+    const hackerInfo = ui.querySelector('#hackerinfo') || ui.appendChild(Object.assign(document.createElement('div'), {id: 'hackerinfo', innerHTML: ``}))
+    Object.assign(hackerInfo.style, {
+        //width: document.querySelector('#sectionLeft').offsetWidth*0.88+'px',
+        height: (document.body.offsetHeight-(document.body.offsetHeight-bottomOffset)-actions.offsetHeight-50)+'px',
+        marginTop: '5px',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        margin: '0px', padding: '0px'
+    })
+
+    /*
     document.querySelectorAll(`#${ui.id} > *`).forEach(l => {
         Object.assign(l.style, {
             width: leftWidth,
         })
     })
+    */
 }
 const buildUI = () => {
     if (!ui) initUI()
     styleUI()
-
-    const hackerInfo = ui.querySelector('#hackerinfo') || ui.appendChild(Object.assign(document.createElement('div'), {id: 'hackerinfo', innerHTML: ``}))
-    Object.assign(hackerInfo.style, {
-        width: document.querySelector('#sectionLeft').offsetWidth*0.88+'px',
-        height: (document.body.offsetHeight-(document.body.offsetHeight-bottomOffset)-actions.offsetHeight-50)+'px',
-        marginTop: '5px',
-        overflowX: 'hidden',
-        overflowY: 'auto',
-    })
 
     const updateStyle = (styleText, index = 0) => {
         if (Array.from(style.sheet.cssRules).find(r => r.cssText.includes(styleText)))
@@ -108,7 +114,19 @@ const buildUI = () => {
         style.sheet.insertRule(styleText, Array.from(style.sheet.cssRules).length)
     }
     updateStyle(`.action-button {background-color: green; border: none;}`)
-    updateStyle(`.action-info {color: black; font-weight: bold; font-size: 110%;}`)
+    updateStyle(`.action-info {color: black; font-weight: bold; font-size: 130%;
+        /*
+        background: rgba(200, 200, 200, .2);
+        text-shadow:
+        0.05em 0 white,
+        0 0.05em white,
+        -0.05em 0 white,
+        0 -0.05em white,
+        -0.05em -0.05em white,
+        -0.05em 0.05em white,
+        0.05em -0.05em white,
+    0.05em 0.05em white;*/
+    }`)
     updateStyle(`.hackaction {display: flex}`)
     updateStyle(`.hackaction > * {margin-left: 5px}`)
 
@@ -125,8 +143,8 @@ const buildUI = () => {
         }
 
     }
-
 }
+
 let lastmsg = ''
 let repeatCount = 0
 const nosrcInfo = function() {info(...arguments)}
@@ -291,7 +309,7 @@ const actionManager = {
         const label = `<label for=""${action.name}_toggle">${action.name}</label> ${intervalInput}`
         const actionInput = state === 'press' ?
             `<button type="button" id="${action.name}_toggle" class='action-button' name="${action.name}_toggle" onclick="javascript:actionManager.actions['${action.name}'].keyfn()">X</button>`
-        : `<input type="checkbox" id="${action.name}_toggle" name="${action.name}_toggle" value="" onclick="javascript:a=actionManager.actions['${action.name}']; typeof a.fn === 'function' ? a.toggle() : a.keyfn()" ${state ? 'checked' : ''}>`
+        : `<input type="checkbox" id="${action.name}_toggle" name="${action.name}_toggle" value="" onclick="javascript:a=actionManager.actions['${action.name}']; typeof a.fn === 'function' && !a.stateFunc ? a.toggle() : a.keyfn()" ${state ? 'checked' : ''}>`
         const actionInfo = `<div id="${action.name}_info" class="action-info">${action.lastMsg || ''}${'.'.repeat(action.lastMsgRepeat)}</div>`
         return `${keyInput} ${actionInput} ${label} ${actionInfo}`
     },
@@ -474,7 +492,7 @@ function showValues(log = false) {
         upgrade.groupName = group
         upgrade.value = price / cpsIncrease
         upgrade.El = storeEl
-        
+
         //console.log(upgrade.name, group, percent, numberFormatters[1](cpsIncrease))
     }
     upgradesByValue = [...upgrades].sort((a, b) => { return a.value - b.value })
