@@ -30,16 +30,18 @@ const abracadabra = () => {
     };
 
     document.querySelector('#sectionRight').onmousemove = () => { showValues() }
-    actionManager.add({ name: 'updateValues', autostart: true, fn: () => { showValues() }, interval: 20000, key: 'q', keyfn: () => { showValues(true) } })
+    actionManager.add({ name: 'updateValues', autostart: false, fn: () => { showValues() }, interval: 20000, key: 'q', keyfn: () => { showValues(true) } })
+    
     actionManager.add({ name: 'bigcookie', autostart: true, fn: () => { clickcookie() }, interval: 10, key: 'a' })
     Game.shimmersL.removeChild = (el) => { try { Game.shimmersL.removeChild(el) } catch (e) {} } // Patch errors from clicking too many golden cookies
-    actionManager.add({ name: 'autodeleteshimmers', autostart: true, fn: () => { clickgoldens({deleteGoldens: true, alsoClick: false}) }, interval: 10, key: 's' })
+    actionManager.add({ name: 'autodeleteshimmers', autostart: false, fn: () => { clickgoldens({deleteGoldens: true, alsoClick: false}) }, interval: 10, key: 's' })
     actionManager.add({ name: 'clickgoldens', keyfn: (noop = false) => { if (noop) return 'press'; clickgoldens({}, true) },  key: 'x' })
-    actionManager.add({ name: 'autoclickgoldens', autostart: true, fn: () => { clickgoldens() },  interval: 3244, key: 'f' })
+    actionManager.add({ name: 'autoclickgoldens', autostart: false, fn: () => { clickgoldens() },  interval: 3244, key: 'f' })
     actionManager.add({ name: 'clickwraths', keyfn: (noop = false) => { if (noop) return 'press'; clickgoldens({clickTypes: ['wrath']}, true) }, key: 'z' })
-    actionManager.add({ name: 'autoclickwraths', autostart: true, fn: () => { clickgoldens({clickTypes: ['wrath']}) },  interval: 1411, key: 'd' })
+    actionManager.add({ name: 'autoclickwraths', autostart: false, fn: () => { clickgoldens({clickTypes: ['wrath']}) },  interval: 1411, key: 'd' })
 
     actionManager.add({ name: 'popwrinklersatmaxuntilgold', autostart: false, fn: () => { checkwrinklers() },  interval: 1411, key: 'e' })
+    
 
     initUI()
     buildUI()
@@ -417,15 +419,19 @@ function showValues(log = false) {
 		return b
 	})
 
+
+
 	buildingsByValue = [...buildings].sort((a, b) => {
-		//numberFormatters[1](Game.ObjectsById[0].getSumPrice(1))
+        /*
+        //numberFormatters[1](Game.ObjectsById[0].getSumPrice(1))
 		const amount = b.price >= a.price
 						? a.getSumPrice(parseInt((b.price / a.price), 10))
 						: b.getSumPrice(parseInt(a.price / b.price, 10))
 
-		//console.log(a.name, ' buys ', amount, b.name)
-		//a.value = (amount / a.computed_cps)
-		//b.value = (amount / b.computed_cps)
+		console.log(a.name, ' buys ', amount, b.name)
+		a.value = (amount / a.computed_cps)
+		b.value = (amount / b.computed_cps)
+        */
 		return a.value - b.value
 	})
 
