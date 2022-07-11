@@ -290,8 +290,9 @@ const actionManager = {
     changeInterval: function(name, interval) {
         const action = this.actions[name] || this.actions[name.name]
         if (!action) return
-        action.stop()
         action.interval = interval
+        if (!action.id) return
+        action.stop()
         action.start()
     },
     toggle: function(name) {
@@ -448,7 +449,7 @@ function showValues(log = false) {
 
 		let valueInfo = document.querySelector(`${building.name}Value`)
 		if (!valueInfo) {
-			valueInfo = Object.assign(document.createElement('span'), { id: building.name + 'Value', classList: 'value', innerHTML: ` (${numberFormatters[1](building.value)} per buy)(${valueIndex+1})` })
+			valueInfo = Object.assign(document.createElement('span'), { id: building.name + 'Value', classList: 'value', innerHTML: ` (${numberFormatters[1](building.value) != '0' ?  numberFormatters[1](building.value) : building.value} per buy)(${valueIndex+1})` })
 			document.querySelectorAll('.product.unlocked')[i]?.querySelector('.content > .price').appendChild(valueInfo)
 		}
 
@@ -503,9 +504,11 @@ function showValues(log = false) {
     }
     upgradesByValue = [...upgrades].sort((a, b) => { return a.value - b.value })
     upgradesByValue.forEach((upgrade, i) => {
+        upgrade.El = upgrade.El || document.querySelector(`.upgrade[onclick*="Game.UpgradesById[${upgrade.id}]"]`)
         const storeEl = upgrade.El
-        const storeInfo = storeEl.querySelector(`#${upgrade.name.replaceAll(' ','')}_storeinfo`)
-                        || storeEl.appendChild(Object.assign(document.createElement('div'),{id: `${upgrade.name.replaceAll(' ','')}_storeinfo`}))
+        if (!storeEl) return
+        const storeInfo = storeEl.querySelector(`#${stripInvalid(upgrade.name)}_storeinfo`)
+                        || storeEl.appendChild(Object.assign(document.createElement('div'),{id: `${stripInvalid(upgrade.name)}_storeinfo`}))
         storeInfo.innerHTML =  `(${i+1})`
         Object.assign(storeInfo.style, {
             position: 'absolute',
@@ -516,7 +519,10 @@ function showValues(log = false) {
             textOverflow: 'ellipsis',
         })
     })
+}
 
+const stripInvalid = (str) => {
+    return str.replaceAll(' ','').replaceAll("'",'').replaceAll('"','').replaceAll('[','').replaceAll(']','')
 }
 
 abracadabra()
