@@ -29,9 +29,10 @@ const abracadabra = () => {
         }
     };
 
+    document.querySelector('#sectionLeft').onclick = (e) => { if (!e.isTrusted) return; console.log("A"); setTimeout(() => styleUI(), 555) }
     document.querySelector('#sectionRight').onmousemove = () => { showValues() }
     actionManager.add({ name: 'updateValues', autostart: false, fn: () => { showValues() }, interval: 20000, key: 'q', keyfn: () => { showValues(true) } })
-    
+
     actionManager.add({ name: 'bigcookie', autostart: true, fn: () => { clickcookie() }, interval: 10, key: 'a' })
     Game.shimmersL.removeChild = (el) => { try { Game.shimmersL.removeChild(el) } catch (e) {} } // Patch errors from clicking too many golden cookies
     actionManager.add({ name: 'autodeleteshimmers', autostart: false, fn: () => { clickgoldens({deleteGoldens: true, alsoClick: false}) }, interval: 10, key: 's' })
@@ -41,7 +42,7 @@ const abracadabra = () => {
     actionManager.add({ name: 'autoclickwraths', autostart: false, fn: () => { clickgoldens({clickTypes: ['wrath']}) },  interval: 1411, key: 'd' })
 
     actionManager.add({ name: 'popwrinklersatmaxuntilgold', autostart: false, fn: () => { checkwrinklers() },  interval: 1411, key: 'e' })
-    
+
 
     initUI()
     buildUI()
@@ -49,7 +50,7 @@ const abracadabra = () => {
 if (Game) Game.abracadabra = abracadabra
 
 let ui, actions, style, resize_ob
-const bottomOffset = 400
+
 const initUI = () => {
     //custom stylesheet
     style = document.querySelector('#hackstyle') || Object.assign(document.createElement('style'), {id: 'hackstyle'})
@@ -67,18 +68,25 @@ const initUI = () => {
 }
 
 const styleUI = () => {
-    const leftWidth = `calc(${(document.querySelector('#sectionLeft').offsetWidth-(document.querySelector('.buff')?.offsetWidth || 0))}px - 2vw)`
+    const dragonMenuHeight = document.querySelector('#specialPopup') && document.querySelector('#specialPic')
+                             ? document.querySelector('#specialPopup').offsetHeight + document.querySelector('#specialPic').offsetHeight : 110
+    const crateWidth = document.querySelector('.buff')?.offsetWidth || 0
+    const topOffset = document.body.offsetHeight - 400 - dragonMenuHeight
+    const leftOffset = parseInt(document.body.offsetWidth / 100, 10) /2 //1vw
+    const uiWidth = document.querySelector('#sectionLeft').offsetWidth-leftOffset-20//-crateWidth
+    //const uiHeight = document.body.offsetHeight - topOffset -
     Object.assign(ui.style, {
-        zIndex: '999999',
+        zIndex: '9999999',
         fontsize: "2rem",
         position: "absolute",
-        left:"1vw",
-        top: (document.body.offsetHeight-bottomOffset)+"px",
-        background: 'rgba(200, 200, 200, .2)'
+        left: leftOffset+'px',//"1vw",
+        top: (topOffset)+"px",
+        background: 'rgba(200, 200, 200, .2)',
+        //height: uiHeight-+'px',
     })
 
     Object.assign(actions.style, {
-        width: leftWidth,
+        width: uiWidth+'px',
         padding: '5px',
         border: '2.5px solid',
         whiteSpace: 'nowrap',
@@ -87,9 +95,11 @@ const styleUI = () => {
     })
 
     const hackerInfo = ui.querySelector('#hackerinfo') || ui.appendChild(Object.assign(document.createElement('div'), {id: 'hackerinfo', innerHTML: ``}))
+    const infoHeight = (document.body.offsetHeight-topOffset) - actions.offsetHeight - dragonMenuHeight
     Object.assign(hackerInfo.style, {
         //width: document.querySelector('#sectionLeft').offsetWidth*0.88+'px',
-        height: (document.body.offsetHeight-(document.body.offsetHeight-bottomOffset)-actions.offsetHeight-50)+'px',
+        height: infoHeight+'px',
+        maxHeight: infoHeight+'px',
         marginTop: '5px',
         overflowX: 'hidden',
         overflowY: 'auto',
@@ -99,7 +109,7 @@ const styleUI = () => {
     /*
     document.querySelectorAll(`#${ui.id} > *`).forEach(l => {
         Object.assign(l.style, {
-            width: leftWidth,
+            width: uiWidth,
         })
     })
     */
