@@ -20,4 +20,4 @@ For use on https://orteil.dashnet.org/cookieclicker/
 4. Press enter
 
 ## Screenshots
-<img src="/doc1.png" width="70%" />
+<img src="/doc2.png" width="70%" />
