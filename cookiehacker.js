@@ -29,7 +29,7 @@ const abracadabra = () => {
         }
     };
 
-    document.querySelector('#sectionLeft').onclick = (e) => { if (!e.isTrusted) return; console.log("A"); setTimeout(() => styleUI(), 555) }
+    document.querySelector('#sectionLeft').onclick = (e) => { if (!e.isTrusted) return ; console.log("A"); setTimeout(() => styleUI(), 555) }
     document.querySelector('#sectionRight').onmousemove = () => { showValues() }
     actionManager.add({ name: 'updateValues', autostart: false, fn: () => { showValues() }, interval: 20000, key: 'q', keyfn: () => { showValues(true) } })
 
